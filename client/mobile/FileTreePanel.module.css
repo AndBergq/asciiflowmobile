@@ -1,0 +1,466 @@
+/* File Tree Panel - Slide-up panel with folder hierarchy */
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  background: var(--overlay-bg);
+  z-index: 40;
+  animation: fadeIn 0.25s ease;
+}
+
+.panel {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  max-height: 85vh;
+  background: var(--bg-primary);
+  border-radius: 20px 20px 0 0;
+  z-index: 45;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow-xl);
+  animation: slideUp 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Handle for drag-to-close */
+.handle {
+  display: flex;
+  justify-content: center;
+  padding: 12px;
+  cursor: grab;
+}
+
+.handleBar {
+  width: 40px;
+  height: 4px;
+  background: var(--text-tertiary);
+  border-radius: 2px;
+  opacity: 0.5;
+}
+
+/* Header */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px 12px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+  letter-spacing: -0.5px;
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.headerButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: none;
+  background: transparent;
+  border-radius: 10px;
+  color: var(--accent-color);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.headerButton:hover {
+  background: var(--accent-light);
+}
+
+.headerButton:active {
+  transform: scale(0.92);
+}
+
+.headerButton svg {
+  width: 22px;
+  height: 22px;
+}
+
+.closeButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: none;
+  background: var(--bg-tertiary);
+  border-radius: 10px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  margin-left: 8px;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.closeButton:hover {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+.closeButton:active {
+  transform: scale(0.92);
+}
+
+/* Search */
+.searchContainer {
+  display: flex;
+  align-items: center;
+  margin: 12px 16px;
+  padding: 10px 14px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  gap: 10px;
+}
+
+.searchIcon {
+  width: 20px;
+  height: 20px;
+  color: var(--text-tertiary);
+  flex-shrink: 0;
+}
+
+.searchInput {
+  flex: 1;
+  border: none;
+  background: transparent;
+  font-size: 15px;
+  color: var(--text-primary);
+  outline: none;
+}
+
+.searchInput::placeholder {
+  color: var(--text-tertiary);
+}
+
+.clearSearch {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: var(--bg-tertiary);
+  border-radius: 50%;
+  color: var(--text-secondary);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.clearSearch svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* Create new item */
+.createNew {
+  display: flex;
+  align-items: center;
+  margin: 0 16px 12px;
+  padding: 8px 12px;
+  background: var(--accent-light);
+  border: 1px dashed var(--accent-color);
+  border-radius: 12px;
+  gap: 10px;
+  animation: scaleIn 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.createIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent-color);
+}
+
+.createIcon svg {
+  width: 22px;
+  height: 22px;
+}
+
+.createInput {
+  flex: 1;
+  border: none;
+  background: transparent;
+  font-size: 14px;
+  color: var(--text-primary);
+  outline: none;
+}
+
+.createConfirm,
+.createCancel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.createConfirm {
+  color: var(--success-color);
+}
+
+.createConfirm:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.createCancel {
+  color: var(--text-tertiary);
+}
+
+.createConfirm:hover:not(:disabled),
+.createCancel:hover {
+  background: var(--bg-tertiary);
+}
+
+/* File list */
+.fileList {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 0;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Empty state */
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  text-align: center;
+}
+
+.emptyIcon {
+  width: 48px;
+  height: 48px;
+  color: var(--text-tertiary);
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+
+.emptyState p {
+  font-size: 15px;
+  color: var(--text-secondary);
+  margin: 0 0 16px;
+}
+
+.createButton {
+  padding: 10px 20px;
+  background: var(--accent-color);
+  border: none;
+  border-radius: 10px;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.createButton:hover {
+  background: var(--accent-hover);
+}
+
+.createButton:active {
+  transform: scale(0.97);
+}
+
+/* Tree nodes */
+.folderNode {
+  display: flex;
+  flex-direction: column;
+}
+
+.nodeButton {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 12px 16px;
+  border: none;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  gap: 10px;
+  transition: all 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.nodeButton:hover {
+  background: var(--bg-secondary);
+}
+
+.nodeButton:active {
+  background: var(--bg-tertiary);
+}
+
+.nodeButton.active {
+  background: var(--accent-light);
+}
+
+.nodeButton.active .nodeName {
+  color: var(--accent-color);
+  font-weight: 600;
+}
+
+.expandIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  color: var(--text-tertiary);
+  transition: transform 0.2s ease;
+}
+
+.expandIcon.expanded {
+  transform: rotate(90deg);
+}
+
+.expandIcon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.folderIcon {
+  width: 20px;
+  height: 20px;
+  color: var(--warning-color);
+}
+
+.fileIcon {
+  width: 20px;
+  height: 20px;
+  color: var(--text-tertiary);
+}
+
+.nodeButton.active .fileIcon {
+  color: var(--accent-color);
+}
+
+.nodeName {
+  flex: 1;
+  font-size: 14px;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.childCount {
+  padding: 2px 8px;
+  background: var(--bg-tertiary);
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+}
+
+.fileSize {
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+
+.folderChildren {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Context menu */
+.contextMenu {
+  position: fixed;
+  z-index: 50;
+  min-width: 150px;
+  padding: 6px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  box-shadow: var(--shadow-lg);
+  animation: scaleIn 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.contextMenuItem {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 10px 12px;
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  font-size: 14px;
+  color: var(--text-primary);
+  cursor: pointer;
+  gap: 10px;
+  transition: all 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.contextMenuItem:hover {
+  background: var(--bg-secondary);
+}
+
+.contextMenuItem.danger {
+  color: var(--error-color);
+}
+
+.contextMenuItem svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Safe area for home indicator */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .fileList {
+    padding-bottom: calc(8px + env(safe-area-inset-bottom));
+  }
+}

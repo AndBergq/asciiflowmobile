@@ -302,6 +302,12 @@ export function Drawer() {
                     )}
                   </IconButton>
                   <IconButton
+                    onClick={() => store.layoutPreference.set('mobile')}
+                    title="Switch to mobile view"
+                  >
+                    <Icons.PhoneAndroid />
+                  </IconButton>
+                  <IconButton
                     onClick={() =>
                       store.helpControlsOpen.set(!store.helpControlsOpen.get())
                     }
