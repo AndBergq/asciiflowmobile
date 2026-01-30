@@ -1,0 +1,2830 @@
+# Mobile-First ASCII Flow Editor - Complete Source Code Export
+# For Google AI Studio Import
+# ============================================================
+
+## FILE: client/mobile/index.ts
+```typescript
+// Mobile-first ASCII Flow Editor Components
+// Inspired by Eraser.io
+
+export { MobileLayout } from './MobileLayout';
+export { MobileHeader } from './MobileHeader';
+export { BottomToolbar } from './BottomToolbar';
+export { FloatingActionMenu } from './FloatingActionMenu';
+export { FileTreePanel } from './FileTreePanel';
+export { QuickActions } from './QuickActions';
+```
+
+## FILE: client/mobile/MobileLayout.tsx
+```typescript
+import * as React from "react";
+import { useState, useCallback, useEffect } from "react";
+import { DrawingId, store, ToolMode } from "#asciiflow/client/store";
+import { useWatchable } from "#asciiflow/common/watchable";
+import { BottomToolbar } from "./BottomToolbar";
+import { FloatingActionMenu } from "./FloatingActionMenu";
+import { FileTreePanel } from "./FileTreePanel";
+import { MobileHeader } from "./MobileHeader";
+import { QuickActions } from "./QuickActions";
+import styles from "./MobileLayout.module.css";
+
+export interface MobileLayoutProps {
+  children: React.ReactNode;
+}
+
+export function MobileLayout({ children }: MobileLayoutProps) {
+  const [filePanelOpen, setFilePanelOpen] = useState(false);
+  const [quickActionsOpen, setQuickActionsOpen] = useState(false);
+
+  // Handle swipe up gesture for file panel
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
+
+  const minSwipeDistance = 50;
+
+  const onTouchStart = useCallback((e: React.TouchEvent) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientY);
+  }, []);
+
+  const onTouchMove = useCallback((e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientY);
+  }, []);
+
+  const onTouchEnd = useCallback(() => {
+    if (!touchStart || !touchEnd) return;
+    const distance = touchStart - touchEnd;
+    const isUpSwipe = distance > minSwipeDistance;
+    const isDownSwipe = distance < -minSwipeDistance;
+
+    // Swipe up from bottom to open file panel
+    if (isUpSwipe && touchStart > window.innerHeight - 100) {
+      setFilePanelOpen(true);
+    }
+    // Swipe down to close file panel
+    if (isDownSwipe && filePanelOpen) {
+      setFilePanelOpen(false);
+    }
+  }, [touchStart, touchEnd, filePanelOpen]);
+
+  // Haptic feedback helper
+  const triggerHaptic = useCallback((type: 'light' | 'medium' | 'heavy' = 'light') => {
+    if ('vibrate' in navigator) {
+      const patterns = {
+        light: [10],
+        medium: [20],
+        heavy: [30, 10, 30]
+      };
+      navigator.vibrate(patterns[type]);
+    }
+  }, []);
+
+  return useWatchable(() => {
+    const darkMode = store.darkMode.get();
+
+    return (
+      <div
+        className={`${styles.mobileLayout} ${darkMode ? styles.dark : styles.light}`}
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+      >
+        {/* Header with drawing name and actions */}
+        <MobileHeader
+          onMenuClick={() => {
+            triggerHaptic('light');
+            setFilePanelOpen(true);
+          }}
+          onQuickActionsClick={() => {
+            triggerHaptic('light');
+            setQuickActionsOpen(true);
+          }}
+        />
+
+        {/* Main canvas area */}
+        <div className={styles.canvasContainer}>
+          {children}
+        </div>
+
+        {/* Bottom toolbar with tools */}
+        <BottomToolbar onHaptic={triggerHaptic} />
+
+        {/* Floating action menu for undo/redo/zoom */}
+        <FloatingActionMenu onHaptic={triggerHaptic} />
+
+        {/* File tree slide-up panel */}
+        <FileTreePanel
+          open={filePanelOpen}
+          onClose={() => setFilePanelOpen(false)}
+          onHaptic={triggerHaptic}
+        />
+
+        {/* Quick actions overlay */}
+        <QuickActions
+          open={quickActionsOpen}
+          onClose={() => setQuickActionsOpen(false)}
+          onHaptic={triggerHaptic}
+        />
+
+        {/* Swipe indicator */}
+        <div className={styles.swipeIndicator}>
+          <div className={styles.swipeHandle} />
+        </div>
+      </div>
+    );
+  });
+}
+```
+
+## FILE: client/mobile/MobileLayout.module.css
+```css
+/* Mobile-first layout inspired by Eraser.io */
+
+.mobileLayout {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+}
+
+/* Light theme */
+.light {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f8f9fa;
+  --bg-tertiary: #f1f3f4;
+  --bg-elevated: #ffffff;
+  --text-primary: #202124;
+  --text-secondary: #5f6368;
+  --text-tertiary: #80868b;
+  --border-color: #e8eaed;
+  --accent-color: #1a73e8;
+  --accent-hover: #1557b0;
+  --accent-light: rgba(26, 115, 232, 0.1);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
+  --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.16);
+  --overlay-bg: rgba(0, 0, 0, 0.3);
+  --success-color: #34a853;
+  --warning-color: #fbbc04;
+  --error-color: #ea4335;
+}
+
+/* Dark theme */
+.dark {
+  --bg-primary: #1e1e1e;
+  --bg-secondary: #252526;
+  --bg-tertiary: #2d2d2d;
+  --bg-elevated: #323233;
+  --text-primary: #e8eaed;
+  --text-secondary: #9aa0a6;
+  --text-tertiary: #80868b;
+  --border-color: #3c4043;
+  --accent-color: #8ab4f8;
+  --accent-hover: #aecbfa;
+  --accent-light: rgba(138, 180, 248, 0.15);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
+  --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.6);
+  --overlay-bg: rgba(0, 0, 0, 0.5);
+  --success-color: #81c995;
+  --warning-color: #fdd663;
+  --error-color: #f28b82;
+}
+
+.canvasContainer {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Swipe indicator at bottom */
+.swipeIndicator {
+  position: fixed;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 15;
+  padding: 12px 24px;
+  pointer-events: none;
+  opacity: 0.6;
+  transition: opacity 0.2s ease;
+}
+
+.swipeHandle {
+  width: 36px;
+  height: 4px;
+  background: var(--text-tertiary);
+  border-radius: 2px;
+}
+
+/* Animations */
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Touch optimized button styles */
+:global(.mobile-btn) {
+  min-height: 44px;
+  min-width: 44px;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+/* Prevent text selection on touch */
+.mobileLayout {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+/* Safe area insets for notched devices */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .mobileLayout {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+```
+
+## FILE: client/mobile/MobileHeader.tsx
+```typescript
+import * as React from "react";
+import { store, DrawingId } from "#asciiflow/client/store";
+import { DrawingStringifier } from "#asciiflow/client/store/drawing_stringifier";
+import { useWatchable } from "#asciiflow/common/watchable";
+import * as Icons from "@material-ui/icons";
+import styles from "./MobileHeader.module.css";
+
+interface MobileHeaderProps {
+  onMenuClick: () => void;
+  onQuickActionsClick: () => void;
+}
+
+export function MobileHeader({ onMenuClick, onQuickActionsClick }: MobileHeaderProps) {
+  return useWatchable(() => {
+    const route = store.route.get();
+    const darkMode = store.darkMode.get();
+
+    // Get drawing name
+    let drawingName = "Untitled";
+    if (route.localId) {
+      drawingName = route.localId;
+    } else if (route.shareSpec) {
+      try {
+        const drawing = new DrawingStringifier().deserialize(route.shareSpec);
+        drawingName = drawing.name || "Shared Drawing";
+      } catch {
+        drawingName = "Shared Drawing";
+      }
+    }
+
+    // Get file size
+    const fileSize = store.currentCanvas.committed.size();
+
+    return (
+      <header className={`${styles.header} ${darkMode ? styles.dark : ''}`}>
+        <button
+          className={styles.menuButton}
+          onClick={onMenuClick}
+          aria-label="Open file menu"
+        >
+          <Icons.Menu />
+        </button>
+
+        <div className={styles.titleContainer}>
+          <h1 className={styles.title}>{drawingName}</h1>
+          <span className={styles.subtitle}>
+            {fileSize}B
+            {route.shareSpec && (
+              <span className={styles.badge}>Shared</span>
+            )}
+          </span>
+        </div>
+
+        <div className={styles.actions}>
+          <button
+            className={styles.iconButton}
+            onClick={() => store.darkMode.set(!darkMode)}
+            aria-label="Toggle dark mode"
+          >
+            {darkMode ? <Icons.WbSunny /> : <Icons.NightsStay />}
+          </button>
+
+          <button
+            className={styles.iconButton}
+            onClick={onQuickActionsClick}
+            aria-label="Quick actions"
+          >
+            <Icons.MoreVert />
+          </button>
+        </div>
+      </header>
+    );
+  });
+}
+```
+
+## FILE: client/mobile/MobileHeader.module.css
+```css
+/* Mobile Header - Clean, minimal design inspired by Eraser.io */
+
+.header {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  background: var(--bg-primary);
+  border-bottom: 1px solid var(--border-color);
+  z-index: 20;
+  min-height: 56px;
+  gap: 8px;
+  box-shadow: var(--shadow-sm);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+/* Safe area for notched devices */
+@supports (padding-top: env(safe-area-inset-top)) {
+  .header {
+    padding-top: calc(8px + env(safe-area-inset-top));
+  }
+}
+
+.menuButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: none;
+  background: transparent;
+  border-radius: 10px;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.menuButton:hover {
+  background: var(--bg-tertiary);
+}
+
+.menuButton:active {
+  transform: scale(0.95);
+  background: var(--accent-light);
+}
+
+.titleContainer {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  letter-spacing: -0.3px;
+}
+
+.subtitle {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 6px;
+  background: var(--accent-light);
+  color: var(--accent-color);
+  font-size: 10px;
+  font-weight: 600;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.iconButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: none;
+  background: transparent;
+  border-radius: 10px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.iconButton:hover {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+.iconButton:active {
+  transform: scale(0.95);
+}
+
+.iconButton svg {
+  width: 22px;
+  height: 22px;
+}
+
+/* Dark mode enhancements */
+.dark .header {
+  background: rgba(30, 30, 30, 0.95);
+}
+```
+
+## FILE: client/mobile/BottomToolbar.tsx
+```typescript
+import * as React from "react";
+import { useState } from "react";
+import { store, ToolMode } from "#asciiflow/client/store";
+import { useWatchable } from "#asciiflow/common/watchable";
+import * as Icons from "@material-ui/icons";
+import styles from "./BottomToolbar.module.css";
+
+interface BottomToolbarProps {
+  onHaptic: (type: 'light' | 'medium' | 'heavy') => void;
+}
+
+interface ToolConfig {
+  mode: ToolMode;
+  icon: React.ReactNode;
+  label: string;
+  shortcut: string;
+}
+
+const tools: ToolConfig[] = [
+  { mode: ToolMode.BOX, icon: <Icons.CheckBoxOutlineBlank />, label: "Box", shortcut: "1" },
+  { mode: ToolMode.SELECT, icon: <Icons.NearMe />, label: "Select", shortcut: "2" },
+  { mode: ToolMode.FREEFORM, icon: <Icons.Gesture />, label: "Draw", shortcut: "3" },
+  { mode: ToolMode.ARROWS, icon: <Icons.TrendingUp />, label: "Arrow", shortcut: "4" },
+  { mode: ToolMode.LINES, icon: <Icons.ShowChart />, label: "Line", shortcut: "5" },
+  { mode: ToolMode.TEXT, icon: <Icons.TextFields />, label: "Text", shortcut: "6" },
+];
+
+export function BottomToolbar({ onHaptic }: BottomToolbarProps) {
+  const [expanded, setExpanded] = useState(false);
+
+  return useWatchable(() => {
+    const currentTool = store.toolMode();
+    const isShareView = store.route.get().shareSpec;
+    const darkMode = store.darkMode.get();
+
+    // In share view, hide the toolbar
+    if (isShareView) {
+      return null;
+    }
+
+    const handleToolSelect = (mode: ToolMode) => {
+      onHaptic('light');
+      store.setToolMode(mode);
+      setExpanded(false);
+    };
+
+    // Show only 4 tools in collapsed mode, all in expanded
+    const visibleTools = expanded ? tools : tools.slice(0, 4);
+    const hasMoreTools = !expanded && tools.length > 4;
+
+    return (
+      <div className={`${styles.toolbarContainer} ${darkMode ? styles.dark : ''}`}>
+        <div className={`${styles.toolbar} ${expanded ? styles.expanded : ''}`}>
+          {/* Tool buttons */}
+          {visibleTools.map((tool) => (
+            <button
+              key={tool.mode}
+              className={`${styles.toolButton} ${currentTool === tool.mode ? styles.active : ''}`}
+              onClick={() => handleToolSelect(tool.mode)}
+              aria-label={tool.label}
+              aria-pressed={currentTool === tool.mode}
+            >
+              <span className={styles.toolIcon}>{tool.icon}</span>
+              <span className={styles.toolLabel}>{tool.label}</span>
+              {currentTool === tool.mode && (
+                <span className={styles.activeIndicator} />
+              )}
+            </button>
+          ))}
+
+          {/* Expand/collapse button */}
+          {hasMoreTools && (
+            <button
+              className={styles.moreButton}
+              onClick={() => {
+                onHaptic('light');
+                setExpanded(true);
+              }}
+              aria-label="More tools"
+            >
+              <Icons.MoreHoriz />
+            </button>
+          )}
+
+          {expanded && (
+            <button
+              className={styles.collapseButton}
+              onClick={() => {
+                onHaptic('light');
+                setExpanded(false);
+              }}
+              aria-label="Collapse"
+            >
+              <Icons.Close />
+            </button>
+          )}
+        </div>
+
+        {/* Freeform character indicator */}
+        {currentTool === ToolMode.FREEFORM && (
+          <FreeformCharacterPicker onHaptic={onHaptic} />
+        )}
+      </div>
+    );
+  });
+}
+
+function FreeformCharacterPicker({ onHaptic }: { onHaptic: (type: 'light' | 'medium' | 'heavy') => void }) {
+  const [pickerOpen, setPickerOpen] = useState(false);
+
+  const quickChars = ['x', '*', '#', '@', '.', 'o', '+', '-', '|', '/', '\\'];
+
+  return useWatchable(() => {
+    const currentChar = store.freeformCharacter.get();
+
+    return (
+      <div className={styles.freeformPicker}>
+        <button
+          className={styles.currentChar}
+          onClick={() => {
+            onHaptic('light');
+            setPickerOpen(!pickerOpen);
+          }}
+        >
+          <span className={styles.charDisplay}>{currentChar}</span>
+          <Icons.ExpandMore className={pickerOpen ? styles.rotated : ''} />
+        </button>
+
+        {pickerOpen && (
+          <div className={styles.charGrid}>
+            {quickChars.map((char) => (
+              <button
+                key={char}
+                className={`${styles.charOption} ${currentChar === char ? styles.selected : ''}`}
+                onClick={() => {
+                  onHaptic('light');
+                  store.freeformCharacter.set(char);
+                  setPickerOpen(false);
+                }}
+              >
+                {char}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  });
+}
+```
+
+## FILE: client/mobile/BottomToolbar.module.css
+```css
+/* Bottom Toolbar - Thumb-friendly tool selection */
+
+.toolbarContainer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 16px;
+  padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  pointer-events: none;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: var(--bg-elevated);
+  border-radius: 20px;
+  box-shadow: var(--shadow-lg);
+  pointer-events: auto;
+  border: 1px solid var(--border-color);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  animation: slideUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.toolbar.expanded {
+  flex-wrap: wrap;
+  max-width: 320px;
+  justify-content: center;
+}
+
+.toolButton {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 52px;
+  min-height: 52px;
+  padding: 8px;
+  border: none;
+  background: transparent;
+  border-radius: 14px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.toolButton:hover {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+.toolButton:active {
+  transform: scale(0.92);
+}
+
+.toolButton.active {
+  color: var(--accent-color);
+  background: var(--accent-light);
+}
+
+.toolIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 2px;
+}
+
+.toolIcon svg {
+  width: 22px;
+  height: 22px;
+}
+
+.toolLabel {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.2px;
+}
+
+.activeIndicator {
+  position: absolute;
+  bottom: 4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 4px;
+  background: var(--accent-color);
+  border-radius: 50%;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.moreButton,
+.collapseButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: none;
+  background: var(--bg-tertiary);
+  border-radius: 12px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.moreButton:hover,
+.collapseButton:hover {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+.moreButton:active,
+.collapseButton:active {
+  transform: scale(0.92);
+}
+
+/* Freeform character picker */
+.freeformPicker {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  pointer-events: auto;
+}
+
+.currentChar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 16px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: var(--shadow-md);
+  transition: all 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.currentChar:hover {
+  background: var(--bg-secondary);
+}
+
+.currentChar svg {
+  width: 18px;
+  height: 18px;
+  transition: transform 0.2s ease;
+}
+
+.currentChar svg.rotated {
+  transform: rotate(180deg);
+}
+
+.charDisplay {
+  font-family: 'Courier New', monospace;
+  font-size: 18px;
+  min-width: 20px;
+  text-align: center;
+}
+
+.charGrid {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-bottom: 8px;
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 4px;
+  padding: 8px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  box-shadow: var(--shadow-lg);
+  animation: scaleIn 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.charOption {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  font-family: 'Courier New', monospace;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.charOption:hover {
+  background: var(--bg-tertiary);
+}
+
+.charOption.selected {
+  background: var(--accent-light);
+  color: var(--accent-color);
+}
+
+.charOption:active {
+  transform: scale(0.9);
+}
+
+/* Animations */
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    transform: translateX(-50%) scale(0.9);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(-50%) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* Dark mode specific */
+.dark .toolbar {
+  background: rgba(50, 50, 51, 0.95);
+}
+```
+
+## FILE: client/mobile/FloatingActionMenu.tsx
+```typescript
+import * as React from "react";
+import { useState } from "react";
+import { store } from "#asciiflow/client/store";
+import { Vector } from "#asciiflow/client/vector";
+import { useWatchable } from "#asciiflow/common/watchable";
+import * as Icons from "@material-ui/icons";
+import styles from "./FloatingActionMenu.module.css";
+
+interface FloatingActionMenuProps {
+  onHaptic: (type: 'light' | 'medium' | 'heavy') => void;
+}
+
+export function FloatingActionMenu({ onHaptic }: FloatingActionMenuProps) {
+  const [expanded, setExpanded] = useState(false);
+
+  return useWatchable(() => {
+    const darkMode = store.darkMode.get();
+    const canvas = store.currentCanvas;
+    const canUndo = canvas.undoLayers.get().length > 0;
+    const canRedo = canvas.redoLayers.get().length > 0;
+    const zoom = canvas.zoom;
+
+    const handleUndo = () => {
+      if (canUndo) {
+        onHaptic('medium');
+        canvas.undo();
+      }
+    };
+
+    const handleRedo = () => {
+      if (canRedo) {
+        onHaptic('medium');
+        canvas.redo();
+      }
+    };
+
+    const handleZoomIn = () => {
+      onHaptic('light');
+      const newZoom = Math.min(zoom * 1.2, 5);
+      canvas.setZoom(newZoom);
+    };
+
+    const handleZoomOut = () => {
+      onHaptic('light');
+      const newZoom = Math.max(zoom / 1.2, 0.2);
+      canvas.setZoom(newZoom);
+    };
+
+    const handleResetZoom = () => {
+      onHaptic('medium');
+      canvas.setZoom(1);
+      canvas.setOffset(new Vector(0, 0));
+    };
+
+    return (
+      <div className={`${styles.container} ${darkMode ? styles.dark : ''}`}>
+        {/* Quick undo/redo buttons - always visible */}
+        <div className={styles.quickActions}>
+          <button
+            className={`${styles.actionButton} ${!canUndo ? styles.disabled : ''}`}
+            onClick={handleUndo}
+            disabled={!canUndo}
+            aria-label="Undo"
+          >
+            <Icons.Undo />
+          </button>
+          <button
+            className={`${styles.actionButton} ${!canRedo ? styles.disabled : ''}`}
+            onClick={handleRedo}
+            disabled={!canRedo}
+            aria-label="Redo"
+          >
+            <Icons.Redo />
+          </button>
+        </div>
+
+        {/* Expandable FAB for more options */}
+        <div className={styles.fabContainer}>
+          {expanded && (
+            <div className={styles.fabMenu}>
+              <button
+                className={styles.fabMenuItem}
+                onClick={handleZoomIn}
+                aria-label="Zoom in"
+              >
+                <Icons.ZoomIn />
+                <span>Zoom In</span>
+              </button>
+              <button
+                className={styles.fabMenuItem}
+                onClick={handleZoomOut}
+                aria-label="Zoom out"
+              >
+                <Icons.ZoomOut />
+                <span>Zoom Out</span>
+              </button>
+              <button
+                className={styles.fabMenuItem}
+                onClick={handleResetZoom}
+                aria-label="Reset view"
+              >
+                <Icons.CenterFocusWeak />
+                <span>Reset</span>
+              </button>
+            </div>
+          )}
+
+          <button
+            className={`${styles.fab} ${expanded ? styles.fabActive : ''}`}
+            onClick={() => {
+              onHaptic('light');
+              setExpanded(!expanded);
+            }}
+            aria-label="View options"
+            aria-expanded={expanded}
+          >
+            {expanded ? <Icons.Close /> : <Icons.Tune />}
+          </button>
+
+          {/* Zoom level indicator */}
+          <div className={styles.zoomIndicator}>
+            {Math.round(zoom * 100)}%
+          </div>
+        </div>
+      </div>
+    );
+  });
+}
+```
+
+## FILE: client/mobile/FloatingActionMenu.module.css
+```css
+/* Floating Action Menu - Undo/Redo and Zoom controls */
+
+.container {
+  position: fixed;
+  right: 16px;
+  bottom: 100px;
+  z-index: 25;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 12px;
+}
+
+/* Safe area adjustment */
+@supports (margin-bottom: env(safe-area-inset-bottom)) {
+  .container {
+    bottom: calc(100px + env(safe-area-inset-bottom));
+  }
+}
+
+/* Quick undo/redo buttons */
+.quickActions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 6px;
+  background: var(--bg-elevated);
+  border-radius: 14px;
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border-color);
+}
+
+.actionButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: none;
+  background: transparent;
+  border-radius: 10px;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.actionButton:hover:not(.disabled) {
+  background: var(--bg-tertiary);
+}
+
+.actionButton:active:not(.disabled) {
+  transform: scale(0.92);
+  background: var(--accent-light);
+}
+
+.actionButton.disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.actionButton svg {
+  width: 22px;
+  height: 22px;
+}
+
+/* FAB container */
+.fabContainer {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.fab {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border: none;
+  background: var(--accent-color);
+  border-radius: 16px;
+  color: #ffffff;
+  cursor: pointer;
+  box-shadow: var(--shadow-md);
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.fab:hover {
+  background: var(--accent-hover);
+  transform: scale(1.05);
+}
+
+.fab:active {
+  transform: scale(0.95);
+}
+
+.fab.fabActive {
+  background: var(--error-color);
+  transform: rotate(180deg);
+}
+
+.fab svg {
+  width: 24px;
+  height: 24px;
+}
+
+/* Zoom indicator */
+.zoomIndicator {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 8px;
+  padding: 4px 10px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  box-shadow: var(--shadow-sm);
+  white-space: nowrap;
+}
+
+/* FAB Menu */
+.fabMenu {
+  position: absolute;
+  bottom: 100%;
+  right: 0;
+  margin-bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  animation: slideUp 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.fabMenuItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  box-shadow: var(--shadow-md);
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.fabMenuItem:hover {
+  background: var(--bg-secondary);
+  transform: translateX(-4px);
+}
+
+.fabMenuItem:active {
+  transform: scale(0.97) translateX(-4px);
+}
+
+.fabMenuItem svg {
+  width: 20px;
+  height: 20px;
+  color: var(--accent-color);
+}
+
+/* Animation keyframes */
+@keyframes slideUp {
+  from {
+    transform: translateY(10px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Dark mode specific adjustments */
+.dark .fab {
+  box-shadow: 0 4px 12px rgba(138, 180, 248, 0.2);
+}
+```
+
+## FILE: client/mobile/FileTreePanel.tsx
+```typescript
+import * as React from "react";
+import { useState, useCallback, useMemo } from "react";
+import { store, DrawingId } from "#asciiflow/client/store";
+import { DrawingStringifier } from "#asciiflow/client/store/drawing_stringifier";
+import { useWatchable } from "#asciiflow/common/watchable";
+import { useHistory } from "react-router";
+import * as Icons from "@material-ui/icons";
+import styles from "./FileTreePanel.module.css";
+
+interface FileTreePanelProps {
+  open: boolean;
+  onClose: () => void;
+  onHaptic: (type: 'light' | 'medium' | 'heavy') => void;
+}
+
+interface FileNode {
+  id: string;
+  name: string;
+  type: 'folder' | 'file';
+  drawingId?: DrawingId;
+  children?: FileNode[];
+  isExpanded?: boolean;
+  size?: number;
+}
+
+interface FolderStructure {
+  [key: string]: DrawingId[];
+}
+
+// Parse drawing names into folder structure (e.g., "Folder/Subfolder/File" creates nested structure)
+function parseDrawingsToTree(drawings: DrawingId[]): FileNode[] {
+  const folderStructure: FolderStructure = {};
+  const rootFiles: FileNode[] = [];
+
+  drawings.forEach((drawingId) => {
+    let name = "Untitled";
+    if (drawingId.localId) {
+      name = drawingId.localId;
+    } else if (drawingId.shareSpec) {
+      try {
+        const drawing = new DrawingStringifier().deserialize(drawingId.shareSpec);
+        name = drawing.name || "Shared Drawing";
+      } catch {
+        name = "Shared Drawing";
+      }
+    }
+
+    // Check if name contains folder path (e.g., "Folder/File")
+    const pathParts = name.split('/');
+    if (pathParts.length > 1) {
+      const folderPath = pathParts.slice(0, -1).join('/');
+      if (!folderStructure[folderPath]) {
+        folderStructure[folderPath] = [];
+      }
+      folderStructure[folderPath].push(drawingId);
+    } else {
+      rootFiles.push({
+        id: drawingId.toString(),
+        name,
+        type: 'file',
+        drawingId,
+        size: store.canvas(drawingId).committed.size(),
+      });
+    }
+  });
+
+  // Convert folder structure to tree nodes
+  const folders: FileNode[] = Object.keys(folderStructure).map((folderPath) => ({
+    id: `folder-${folderPath}`,
+    name: folderPath.split('/').pop() || folderPath,
+    type: 'folder' as const,
+    isExpanded: false,
+    children: folderStructure[folderPath].map((drawingId) => {
+      const name = drawingId.localId?.split('/').pop() || "Untitled";
+      return {
+        id: drawingId.toString(),
+        name,
+        type: 'file' as const,
+        drawingId,
+        size: store.canvas(drawingId).committed.size(),
+      };
+    }),
+  }));
+
+  return [...folders, ...rootFiles];
+}
+
+export function FileTreePanel({ open, onClose, onHaptic }: FileTreePanelProps) {
+  const history = useHistory();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
+  const [createMode, setCreateMode] = useState<'none' | 'file' | 'folder'>('none');
+  const [newItemName, setNewItemName] = useState('');
+  const [contextMenu, setContextMenu] = useState<{ node: FileNode; x: number; y: number } | null>(null);
+
+  const toggleFolder = useCallback((folderId: string) => {
+    onHaptic('light');
+    setExpandedFolders((prev) => {
+      const next = new Set(prev);
+      if (next.has(folderId)) {
+        next.delete(folderId);
+      } else {
+        next.add(folderId);
+      }
+      return next;
+    });
+  }, [onHaptic]);
+
+  const handleFileClick = useCallback((drawingId: DrawingId) => {
+    onHaptic('medium');
+    history.push(drawingId.href);
+    onClose();
+  }, [history, onClose, onHaptic]);
+
+  const handleCreateNew = useCallback(() => {
+    if (!newItemName.trim()) return;
+
+    onHaptic('medium');
+
+    if (createMode === 'file') {
+      const newDrawingId = DrawingId.local(newItemName.trim());
+      store.localDrawingIds.set([...store.localDrawingIds.get(), newDrawingId]);
+      history.push(newDrawingId.href);
+      onClose();
+    }
+
+    setCreateMode('none');
+    setNewItemName('');
+  }, [newItemName, createMode, history, onClose, onHaptic]);
+
+  const handleDelete = useCallback((drawingId: DrawingId) => {
+    onHaptic('heavy');
+    store.deleteDrawing(drawingId);
+
+    if (store.route.get().toString() === drawingId.toString()) {
+      const remaining = store.drawings.filter(d => d.toString() !== drawingId.toString());
+      if (remaining.length > 0) {
+        history.push(remaining[0].href);
+      } else {
+        history.push(DrawingId.local(null).href);
+      }
+    }
+    setContextMenu(null);
+  }, [history, onHaptic]);
+
+  return useWatchable(() => {
+    const darkMode = store.darkMode.get();
+    const currentRoute = store.route.get();
+    const drawings = store.drawings;
+
+    const fileTree = useMemo(() => parseDrawingsToTree(drawings), [drawings]);
+
+    const filteredTree = useMemo(() => {
+      if (!searchQuery) return fileTree;
+
+      const query = searchQuery.toLowerCase();
+      return fileTree.filter((node) => {
+        if (node.type === 'folder') {
+          const hasMatchingChild = node.children?.some(
+            (child) => child.name.toLowerCase().includes(query)
+          );
+          return node.name.toLowerCase().includes(query) || hasMatchingChild;
+        }
+        return node.name.toLowerCase().includes(query);
+      });
+    }, [fileTree, searchQuery]);
+
+    if (!open) return null;
+
+    return (
+      <>
+        <div
+          className={styles.backdrop}
+          onClick={() => {
+            onHaptic('light');
+            onClose();
+            setContextMenu(null);
+          }}
+        />
+
+        <div className={`${styles.panel} ${darkMode ? styles.dark : ''}`}>
+          <div className={styles.handle}>
+            <div className={styles.handleBar} />
+          </div>
+
+          <div className={styles.header}>
+            <h2 className={styles.title}>Files</h2>
+            <div className={styles.headerActions}>
+              <button
+                className={styles.headerButton}
+                onClick={() => {
+                  onHaptic('light');
+                  setCreateMode('file');
+                }}
+                aria-label="New file"
+              >
+                <Icons.NoteAdd />
+              </button>
+              <button
+                className={styles.headerButton}
+                onClick={() => {
+                  onHaptic('light');
+                  setCreateMode('folder');
+                }}
+                aria-label="New folder"
+              >
+                <Icons.CreateNewFolder />
+              </button>
+              <button
+                className={styles.closeButton}
+                onClick={() => {
+                  onHaptic('light');
+                  onClose();
+                }}
+                aria-label="Close"
+              >
+                <Icons.Close />
+              </button>
+            </div>
+          </div>
+
+          <div className={styles.searchContainer}>
+            <Icons.Search className={styles.searchIcon} />
+            <input
+              type="text"
+              className={styles.searchInput}
+              placeholder="Search files..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+            {searchQuery && (
+              <button
+                className={styles.clearSearch}
+                onClick={() => setSearchQuery('')}
+              >
+                <Icons.Close />
+              </button>
+            )}
+          </div>
+
+          {createMode !== 'none' && (
+            <div className={styles.createNew}>
+              <div className={styles.createIcon}>
+                {createMode === 'folder' ? <Icons.Folder /> : <Icons.Description />}
+              </div>
+              <input
+                type="text"
+                className={styles.createInput}
+                placeholder={createMode === 'folder' ? "Folder name..." : "File name..."}
+                value={newItemName}
+                onChange={(e) => setNewItemName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleCreateNew();
+                  if (e.key === 'Escape') {
+                    setCreateMode('none');
+                    setNewItemName('');
+                  }
+                }}
+                autoFocus
+              />
+              <button
+                className={styles.createConfirm}
+                onClick={handleCreateNew}
+                disabled={!newItemName.trim()}
+              >
+                <Icons.Check />
+              </button>
+              <button
+                className={styles.createCancel}
+                onClick={() => {
+                  setCreateMode('none');
+                  setNewItemName('');
+                }}
+              >
+                <Icons.Close />
+              </button>
+            </div>
+          )}
+
+          <div className={styles.fileList}>
+            {filteredTree.length === 0 ? (
+              <div className={styles.emptyState}>
+                <Icons.InsertDriveFile className={styles.emptyIcon} />
+                <p>No files found</p>
+                <button
+                  className={styles.createButton}
+                  onClick={() => setCreateMode('file')}
+                >
+                  Create a new file
+                </button>
+              </div>
+            ) : (
+              filteredTree.map((node) => (
+                <FileTreeNode
+                  key={node.id}
+                  node={node}
+                  level={0}
+                  currentRoute={currentRoute}
+                  expandedFolders={expandedFolders}
+                  onToggleFolder={toggleFolder}
+                  onFileClick={handleFileClick}
+                  onContextMenu={(e, n) => {
+                    e.preventDefault();
+                    onHaptic('medium');
+                    setContextMenu({ node: n, x: e.clientX, y: e.clientY });
+                  }}
+                />
+              ))
+            )}
+          </div>
+
+          {contextMenu && contextMenu.node.drawingId && (
+            <div
+              className={styles.contextMenu}
+              style={{
+                left: Math.min(contextMenu.x, window.innerWidth - 160),
+                top: Math.min(contextMenu.y, window.innerHeight - 120),
+              }}
+            >
+              <button
+                className={styles.contextMenuItem}
+                onClick={() => {
+                  if (contextMenu.node.drawingId) {
+                    handleFileClick(contextMenu.node.drawingId);
+                  }
+                  setContextMenu(null);
+                }}
+              >
+                <Icons.OpenInNew />
+                Open
+              </button>
+              <button
+                className={`${styles.contextMenuItem} ${styles.danger}`}
+                onClick={() => {
+                  if (contextMenu.node.drawingId) {
+                    handleDelete(contextMenu.node.drawingId);
+                  }
+                }}
+              >
+                <Icons.Delete />
+                Delete
+              </button>
+            </div>
+          )}
+        </div>
+      </>
+    );
+  });
+}
+
+interface FileTreeNodeProps {
+  node: FileNode;
+  level: number;
+  currentRoute: DrawingId;
+  expandedFolders: Set<string>;
+  onToggleFolder: (folderId: string) => void;
+  onFileClick: (drawingId: DrawingId) => void;
+  onContextMenu: (e: React.MouseEvent, node: FileNode) => void;
+}
+
+function FileTreeNode({
+  node,
+  level,
+  currentRoute,
+  expandedFolders,
+  onToggleFolder,
+  onFileClick,
+  onContextMenu,
+}: FileTreeNodeProps) {
+  const isExpanded = expandedFolders.has(node.id);
+  const isActive = node.drawingId && currentRoute.toString() === node.drawingId.toString();
+  const isShared = node.drawingId?.shareSpec;
+
+  if (node.type === 'folder') {
+    return (
+      <div className={styles.folderNode}>
+        <button
+          className={`${styles.nodeButton} ${styles.folder}`}
+          style={{ paddingLeft: `${16 + level * 20}px` }}
+          onClick={() => onToggleFolder(node.id)}
+        >
+          <span className={`${styles.expandIcon} ${isExpanded ? styles.expanded : ''}`}>
+            <Icons.ChevronRight />
+          </span>
+          <Icons.Folder className={styles.folderIcon} />
+          <span className={styles.nodeName}>{node.name}</span>
+          <span className={styles.childCount}>
+            {node.children?.length || 0}
+          </span>
+        </button>
+
+        {isExpanded && node.children && (
+          <div className={styles.folderChildren}>
+            {node.children.map((child) => (
+              <FileTreeNode
+                key={child.id}
+                node={child}
+                level={level + 1}
+                currentRoute={currentRoute}
+                expandedFolders={expandedFolders}
+                onToggleFolder={onToggleFolder}
+                onFileClick={onFileClick}
+                onContextMenu={onContextMenu}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <button
+      className={`${styles.nodeButton} ${styles.file} ${isActive ? styles.active : ''}`}
+      style={{ paddingLeft: `${16 + level * 20}px` }}
+      onClick={() => node.drawingId && onFileClick(node.drawingId)}
+      onContextMenu={(e) => onContextMenu(e, node)}
+    >
+      {isShared ? (
+        <Icons.Share className={styles.fileIcon} />
+      ) : (
+        <Icons.Description className={styles.fileIcon} />
+      )}
+      <span className={styles.nodeName}>{node.name}</span>
+      <span className={styles.fileSize}>{node.size || 0}B</span>
+    </button>
+  );
+}
+```
+
+## FILE: client/mobile/FileTreePanel.module.css
+```css
+/* File Tree Panel - Slide-up panel with folder hierarchy */
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  background: var(--overlay-bg);
+  z-index: 40;
+  animation: fadeIn 0.25s ease;
+}
+
+.panel {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  max-height: 85vh;
+  background: var(--bg-primary);
+  border-radius: 20px 20px 0 0;
+  z-index: 45;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow-xl);
+  animation: slideUp 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.handle {
+  display: flex;
+  justify-content: center;
+  padding: 12px;
+  cursor: grab;
+}
+
+.handleBar {
+  width: 40px;
+  height: 4px;
+  background: var(--text-tertiary);
+  border-radius: 2px;
+  opacity: 0.5;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px 12px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+  letter-spacing: -0.5px;
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.headerButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: none;
+  background: transparent;
+  border-radius: 10px;
+  color: var(--accent-color);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.headerButton:hover {
+  background: var(--accent-light);
+}
+
+.headerButton:active {
+  transform: scale(0.92);
+}
+
+.headerButton svg {
+  width: 22px;
+  height: 22px;
+}
+
+.closeButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: none;
+  background: var(--bg-tertiary);
+  border-radius: 10px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  margin-left: 8px;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.closeButton:hover {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+.closeButton:active {
+  transform: scale(0.92);
+}
+
+.searchContainer {
+  display: flex;
+  align-items: center;
+  margin: 12px 16px;
+  padding: 10px 14px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  gap: 10px;
+}
+
+.searchIcon {
+  width: 20px;
+  height: 20px;
+  color: var(--text-tertiary);
+  flex-shrink: 0;
+}
+
+.searchInput {
+  flex: 1;
+  border: none;
+  background: transparent;
+  font-size: 15px;
+  color: var(--text-primary);
+  outline: none;
+}
+
+.searchInput::placeholder {
+  color: var(--text-tertiary);
+}
+
+.clearSearch {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: var(--bg-tertiary);
+  border-radius: 50%;
+  color: var(--text-secondary);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.clearSearch svg {
+  width: 16px;
+  height: 16px;
+}
+
+.createNew {
+  display: flex;
+  align-items: center;
+  margin: 0 16px 12px;
+  padding: 8px 12px;
+  background: var(--accent-light);
+  border: 1px dashed var(--accent-color);
+  border-radius: 12px;
+  gap: 10px;
+  animation: scaleIn 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.createIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent-color);
+}
+
+.createIcon svg {
+  width: 22px;
+  height: 22px;
+}
+
+.createInput {
+  flex: 1;
+  border: none;
+  background: transparent;
+  font-size: 14px;
+  color: var(--text-primary);
+  outline: none;
+}
+
+.createConfirm,
+.createCancel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.createConfirm {
+  color: var(--success-color);
+}
+
+.createConfirm:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.createCancel {
+  color: var(--text-tertiary);
+}
+
+.createConfirm:hover:not(:disabled),
+.createCancel:hover {
+  background: var(--bg-tertiary);
+}
+
+.fileList {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 0;
+  -webkit-overflow-scrolling: touch;
+}
+
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  text-align: center;
+}
+
+.emptyIcon {
+  width: 48px;
+  height: 48px;
+  color: var(--text-tertiary);
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+
+.emptyState p {
+  font-size: 15px;
+  color: var(--text-secondary);
+  margin: 0 0 16px;
+}
+
+.createButton {
+  padding: 10px 20px;
+  background: var(--accent-color);
+  border: none;
+  border-radius: 10px;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.createButton:hover {
+  background: var(--accent-hover);
+}
+
+.createButton:active {
+  transform: scale(0.97);
+}
+
+.folderNode {
+  display: flex;
+  flex-direction: column;
+}
+
+.nodeButton {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 12px 16px;
+  border: none;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  gap: 10px;
+  transition: all 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.nodeButton:hover {
+  background: var(--bg-secondary);
+}
+
+.nodeButton:active {
+  background: var(--bg-tertiary);
+}
+
+.nodeButton.active {
+  background: var(--accent-light);
+}
+
+.nodeButton.active .nodeName {
+  color: var(--accent-color);
+  font-weight: 600;
+}
+
+.expandIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  color: var(--text-tertiary);
+  transition: transform 0.2s ease;
+}
+
+.expandIcon.expanded {
+  transform: rotate(90deg);
+}
+
+.expandIcon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.folderIcon {
+  width: 20px;
+  height: 20px;
+  color: var(--warning-color);
+}
+
+.fileIcon {
+  width: 20px;
+  height: 20px;
+  color: var(--text-tertiary);
+}
+
+.nodeButton.active .fileIcon {
+  color: var(--accent-color);
+}
+
+.nodeName {
+  flex: 1;
+  font-size: 14px;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.childCount {
+  padding: 2px 8px;
+  background: var(--bg-tertiary);
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+}
+
+.fileSize {
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+
+.folderChildren {
+  display: flex;
+  flex-direction: column;
+}
+
+.contextMenu {
+  position: fixed;
+  z-index: 50;
+  min-width: 150px;
+  padding: 6px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  box-shadow: var(--shadow-lg);
+  animation: scaleIn 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.contextMenuItem {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 10px 12px;
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  font-size: 14px;
+  color: var(--text-primary);
+  cursor: pointer;
+  gap: 10px;
+  transition: all 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.contextMenuItem:hover {
+  background: var(--bg-secondary);
+}
+
+.contextMenuItem.danger {
+  color: var(--error-color);
+}
+
+.contextMenuItem svg {
+  width: 18px;
+  height: 18px;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+@keyframes scaleIn {
+  from { transform: scale(0.95); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .fileList {
+    padding-bottom: calc(8px + env(safe-area-inset-bottom));
+  }
+}
+```
+
+## FILE: client/mobile/QuickActions.tsx
+```typescript
+import * as React from "react";
+import { useState } from "react";
+import { store, DrawingId } from "#asciiflow/client/store";
+import { DrawingStringifier } from "#asciiflow/client/store/drawing_stringifier";
+import { useWatchable } from "#asciiflow/common/watchable";
+import { useHistory } from "react-router";
+import * as Icons from "@material-ui/icons";
+import styles from "./QuickActions.module.css";
+
+interface QuickActionsProps {
+  open: boolean;
+  onClose: () => void;
+  onHaptic: (type: 'light' | 'medium' | 'heavy') => void;
+}
+
+export function QuickActions({ open, onClose, onHaptic }: QuickActionsProps) {
+  const history = useHistory();
+  const [showExport, setShowExport] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [showRename, setShowRename] = useState(false);
+  const [newName, setNewName] = useState('');
+
+  return useWatchable(() => {
+    const darkMode = store.darkMode.get();
+    const route = store.route.get();
+    const canvas = store.currentCanvas;
+    const isShared = !!route.shareSpec;
+
+    let currentName = "Untitled";
+    if (route.localId) {
+      currentName = route.localId;
+    } else if (route.shareSpec) {
+      try {
+        const drawing = new DrawingStringifier().deserialize(route.shareSpec);
+        currentName = drawing.name || "Shared Drawing";
+      } catch {
+        currentName = "Shared Drawing";
+      }
+    }
+
+    const handleShare = () => {
+      onHaptic('medium');
+      const shareUrl = `${window.location.protocol}//${window.location.host}${
+        window.location.pathname
+      }#${DrawingId.share(canvas.shareSpec).href}`;
+
+      if (navigator.share) {
+        navigator.share({
+          title: currentName,
+          text: 'Check out my ASCII diagram!',
+          url: shareUrl,
+        }).catch(() => {});
+      } else {
+        navigator.clipboard.writeText(shareUrl);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      }
+    };
+
+    const handleExport = () => {
+      onHaptic('light');
+      setShowExport(true);
+    };
+
+    const handleCopyText = () => {
+      onHaptic('medium');
+      const text = canvas.committed.toString();
+      navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    };
+
+    const handleRename = () => {
+      if (!newName.trim() || !route.localId) return;
+      onHaptic('medium');
+      store.renameDrawing(route.localId, newName.trim());
+      history.push(DrawingId.local(newName.trim()).href);
+      setShowRename(false);
+      setNewName('');
+      onClose();
+    };
+
+    const handleFork = () => {
+      if (!route.shareSpec) return;
+      onHaptic('medium');
+
+      const defaultName = currentName + ' (Copy)';
+      store.saveDrawing(route, defaultName);
+      history.push(DrawingId.local(defaultName).href);
+      onClose();
+    };
+
+    if (!open) return null;
+
+    return (
+      <>
+        <div
+          className={styles.backdrop}
+          onClick={() => {
+            onHaptic('light');
+            onClose();
+            setShowExport(false);
+            setShowRename(false);
+          }}
+        />
+
+        <div className={`${styles.sheet} ${darkMode ? styles.dark : ''}`}>
+          <div className={styles.handle}>
+            <div className={styles.handleBar} />
+          </div>
+
+          <div className={styles.header}>
+            <h3 className={styles.title}>Actions</h3>
+            <button
+              className={styles.closeButton}
+              onClick={() => {
+                onHaptic('light');
+                onClose();
+              }}
+            >
+              <Icons.Close />
+            </button>
+          </div>
+
+          {showRename && !isShared && (
+            <div className={styles.renameDialog}>
+              <input
+                type="text"
+                className={styles.renameInput}
+                placeholder="New name..."
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleRename();
+                  if (e.key === 'Escape') {
+                    setShowRename(false);
+                    setNewName('');
+                  }
+                }}
+                autoFocus
+              />
+              <button
+                className={styles.renameConfirm}
+                onClick={handleRename}
+                disabled={!newName.trim()}
+              >
+                Rename
+              </button>
+            </div>
+          )}
+
+          {showExport && (
+            <ExportOptions
+              canvas={canvas}
+              onClose={() => setShowExport(false)}
+              onHaptic={onHaptic}
+            />
+          )}
+
+          {!showExport && !showRename && (
+            <div className={styles.actions}>
+              <button className={styles.actionButton} onClick={handleShare}>
+                <div className={styles.actionIcon}>
+                  <Icons.Share />
+                </div>
+                <div className={styles.actionContent}>
+                  <span className={styles.actionLabel}>Share</span>
+                  <span className={styles.actionDescription}>
+                    {copied ? 'Link copied!' : 'Create shareable link'}
+                  </span>
+                </div>
+              </button>
+
+              <button className={styles.actionButton} onClick={handleExport}>
+                <div className={styles.actionIcon}>
+                  <Icons.GetApp />
+                </div>
+                <div className={styles.actionContent}>
+                  <span className={styles.actionLabel}>Export</span>
+                  <span className={styles.actionDescription}>
+                    Download or copy as text
+                  </span>
+                </div>
+              </button>
+
+              <button className={styles.actionButton} onClick={handleCopyText}>
+                <div className={styles.actionIcon}>
+                  <Icons.FileCopy />
+                </div>
+                <div className={styles.actionContent}>
+                  <span className={styles.actionLabel}>Copy Text</span>
+                  <span className={styles.actionDescription}>
+                    {copied ? 'Copied!' : 'Copy diagram as plain text'}
+                  </span>
+                </div>
+              </button>
+
+              {!isShared && route.localId && (
+                <button
+                  className={styles.actionButton}
+                  onClick={() => {
+                    onHaptic('light');
+                    setNewName(currentName);
+                    setShowRename(true);
+                  }}
+                >
+                  <div className={styles.actionIcon}>
+                    <Icons.Edit />
+                  </div>
+                  <div className={styles.actionContent}>
+                    <span className={styles.actionLabel}>Rename</span>
+                    <span className={styles.actionDescription}>
+                      Change file name
+                    </span>
+                  </div>
+                </button>
+              )}
+
+              {isShared && (
+                <button className={styles.actionButton} onClick={handleFork}>
+                  <div className={styles.actionIcon}>
+                    <Icons.CallSplit />
+                  </div>
+                  <div className={styles.actionContent}>
+                    <span className={styles.actionLabel}>Fork & Edit</span>
+                    <span className={styles.actionDescription}>
+                      Save locally to make changes
+                    </span>
+                  </div>
+                </button>
+              )}
+
+              <button
+                className={styles.actionButton}
+                onClick={() => {
+                  onHaptic('light');
+                  store.unicode.set(!store.unicode.get());
+                }}
+              >
+                <div className={styles.actionIcon}>
+                  <Icons.TextFormat />
+                </div>
+                <div className={styles.actionContent}>
+                  <span className={styles.actionLabel}>Character Set</span>
+                  <span className={styles.actionDescription}>
+                    {store.unicode.get() ? 'Unicode (┌┐└┘)' : 'ASCII (+-|)'}
+                  </span>
+                </div>
+              </button>
+
+              <button
+                className={styles.actionButton}
+                onClick={() => {
+                  onHaptic('light');
+                  store.layoutPreference.set('desktop');
+                  onClose();
+                }}
+              >
+                <div className={styles.actionIcon}>
+                  <Icons.DesktopWindows />
+                </div>
+                <div className={styles.actionContent}>
+                  <span className={styles.actionLabel}>Desktop View</span>
+                  <span className={styles.actionDescription}>
+                    Switch to classic desktop layout
+                  </span>
+                </div>
+              </button>
+            </div>
+          )}
+        </div>
+      </>
+    );
+  });
+}
+
+interface ExportOptionsProps {
+  canvas: any;
+  onClose: () => void;
+  onHaptic: (type: 'light' | 'medium' | 'heavy') => void;
+}
+
+function ExportOptions({ canvas, onClose, onHaptic }: ExportOptionsProps) {
+  const [copied, setCopied] = useState(false);
+
+  const wrapperOptions = [
+    { id: 'none', label: 'Plain text', prefix: '', suffix: '', linePrefix: '' },
+    { id: 'cstyle', label: 'C-style /* */', prefix: '/*\n', suffix: '\n*/', linePrefix: '' },
+    { id: 'slashes', label: 'Double slash //', prefix: '', suffix: '', linePrefix: '// ' },
+    { id: 'hash', label: 'Hash #', prefix: '', suffix: '', linePrefix: '# ' },
+    { id: 'markdown', label: 'Markdown ```', prefix: '```\n', suffix: '\n```', linePrefix: '' },
+  ];
+
+  const handleExport = (wrapper: typeof wrapperOptions[0]) => {
+    onHaptic('medium');
+
+    const text = canvas.committed.toString();
+    const lines = text.split('\n');
+
+    let output = wrapper.prefix;
+    output += lines.map((line: string) => wrapper.linePrefix + line).join('\n');
+    output += wrapper.suffix;
+
+    navigator.clipboard.writeText(output);
+    setCopied(true);
+    setTimeout(() => {
+      setCopied(false);
+      onClose();
+    }, 1000);
+  };
+
+  return (
+    <div className={styles.exportOptions}>
+      <div className={styles.exportHeader}>
+        <button className={styles.backButton} onClick={onClose}>
+          <Icons.ArrowBack />
+        </button>
+        <h4 className={styles.exportTitle}>Export Format</h4>
+      </div>
+
+      <div className={styles.exportList}>
+        {wrapperOptions.map((wrapper) => (
+          <button
+            key={wrapper.id}
+            className={styles.exportOption}
+            onClick={() => handleExport(wrapper)}
+          >
+            <span className={styles.exportLabel}>{wrapper.label}</span>
+            {copied && <Icons.Check className={styles.checkIcon} />}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+```
+
+## FILE: client/mobile/QuickActions.module.css
+```css
+/* Quick Actions - Action sheet for export, share, etc. */
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  background: var(--overlay-bg);
+  z-index: 50;
+  animation: fadeIn 0.25s ease;
+}
+
+.sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  max-height: 70vh;
+  background: var(--bg-primary);
+  border-radius: 20px 20px 0 0;
+  z-index: 55;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow-xl);
+  animation: slideUp 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+  overflow: hidden;
+}
+
+.handle {
+  display: flex;
+  justify-content: center;
+  padding: 12px;
+}
+
+.handleBar {
+  width: 40px;
+  height: 4px;
+  background: var(--text-tertiary);
+  border-radius: 2px;
+  opacity: 0.5;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px 16px;
+}
+
+.title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.closeButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: none;
+  background: var(--bg-tertiary);
+  border-radius: 50%;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.closeButton:hover {
+  background: var(--bg-secondary);
+}
+
+.closeButton:active {
+  transform: scale(0.92);
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  padding: 0 12px;
+  padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  gap: 4px;
+}
+
+.actionButton {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 14px 16px;
+  border: none;
+  background: transparent;
+  border-radius: 14px;
+  cursor: pointer;
+  gap: 14px;
+  transition: all 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+  text-align: left;
+}
+
+.actionButton:hover {
+  background: var(--bg-secondary);
+}
+
+.actionButton:active {
+  background: var(--bg-tertiary);
+  transform: scale(0.99);
+}
+
+.actionIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  background: var(--accent-light);
+  border-radius: 12px;
+  color: var(--accent-color);
+  flex-shrink: 0;
+}
+
+.actionIcon svg {
+  width: 22px;
+  height: 22px;
+}
+
+.actionContent {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.actionLabel {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.actionDescription {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.renameDialog {
+  display: flex;
+  align-items: center;
+  margin: 0 16px 16px;
+  padding: 8px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  gap: 8px;
+  animation: scaleIn 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.renameInput {
+  flex: 1;
+  padding: 10px 12px;
+  border: none;
+  background: var(--bg-primary);
+  border-radius: 8px;
+  font-size: 15px;
+  color: var(--text-primary);
+  outline: none;
+}
+
+.renameInput::placeholder {
+  color: var(--text-tertiary);
+}
+
+.renameConfirm {
+  padding: 10px 20px;
+  background: var(--accent-color);
+  border: none;
+  border-radius: 8px;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.renameConfirm:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.renameConfirm:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+
+.exportOptions {
+  display: flex;
+  flex-direction: column;
+  animation: slideIn 0.25s ease;
+}
+
+.exportHeader {
+  display: flex;
+  align-items: center;
+  padding: 0 16px 12px;
+  gap: 12px;
+}
+
+.backButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: none;
+  background: var(--bg-tertiary);
+  border-radius: 50%;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.backButton:hover {
+  background: var(--bg-secondary);
+}
+
+.backButton:active {
+  transform: scale(0.92);
+}
+
+.exportTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.exportList {
+  display: flex;
+  flex-direction: column;
+  padding: 0 12px;
+  padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  gap: 4px;
+}
+
+.exportOption {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 14px 16px;
+  border: none;
+  background: transparent;
+  border-radius: 12px;
+  font-size: 15px;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.exportOption:hover {
+  background: var(--bg-secondary);
+}
+
+.exportOption:active {
+  background: var(--bg-tertiary);
+}
+
+.exportLabel {
+  font-weight: 500;
+}
+
+.checkIcon {
+  width: 20px;
+  height: 20px;
+  color: var(--success-color);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+@keyframes slideIn {
+  from { transform: translateX(-20px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes scaleIn {
+  from { transform: scale(0.95); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+```
+
+## FILE: client/app.tsx (updated sections)
+```typescript
+// Add import at top
+import { MobileLayout } from "#asciiflow/client/mobile";
+
+// Add these hooks before the App component
+function useDeviceType(): 'mobile' | 'desktop' {
+  const [deviceType, setDeviceType] = React.useState<'mobile' | 'desktop'>(() => {
+    if (typeof window === 'undefined') return 'desktop';
+    const isTouchDevice =
+      'ontouchstart' in window ||
+      navigator.maxTouchPoints > 0 ||
+      window.innerWidth <= 768;
+    return isTouchDevice ? 'mobile' : 'desktop';
+  });
+
+  React.useEffect(() => {
+    const checkDevice = () => {
+      const isTouchDevice =
+        'ontouchstart' in window ||
+        navigator.maxTouchPoints > 0 ||
+        window.innerWidth <= 768;
+      setDeviceType(isTouchDevice ? 'mobile' : 'desktop');
+    };
+
+    window.addEventListener('resize', checkDevice);
+    return () => window.removeEventListener('resize', checkDevice);
+  }, []);
+
+  return deviceType;
+}
+
+function useLayout(): 'mobile' | 'desktop' {
+  const deviceType = useDeviceType();
+  const preference = store.layoutPreference.get();
+
+  if (preference === 'auto') {
+    return deviceType;
+  }
+  return preference;
+}
+
+// In App component, use layout to conditionally render
+export const App = () => {
+  const layout = useLayout();
+
+  return useWatchable(() => {
+    // ... existing code ...
+
+    if (layout === 'mobile') {
+      return (
+        <ThemeProvider theme={theme}>
+          <div className={...}>
+            <MobileLayout>
+              {viewComponent}
+            </MobileLayout>
+          </div>
+        </ThemeProvider>
+      );
+    }
+
+    // Desktop layout
+    return (
+      <ThemeProvider theme={theme}>
+        <div className={...}>
+          <Drawer />
+          {viewComponent}
+        </div>
+      </ThemeProvider>
+    );
+  });
+};
+```
+
+## FILE: client/store/index.ts (add this property to Store class)
+```typescript
+// Mobile layout preference: 'auto' | 'mobile' | 'desktop'
+public readonly layoutPreference = Persistent.json<'auto' | 'mobile' | 'desktop'>(
+  "layoutPreference",
+  'auto'
+);
+```
+
+# END OF EXPORT
