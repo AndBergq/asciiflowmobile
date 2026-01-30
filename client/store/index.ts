@@ -141,13 +141,19 @@ export class Store {
 
   public readonly currentCursor = watchableValue("default");
 
-  public readonly darkMode = 
+  public readonly darkMode =
     Persistent.json(
       "darkMode",
       window.matchMedia &&
         window.matchMedia("(prefers-color-scheme: dark)").matches
     )
   ;
+
+  // Mobile layout preference: 'auto' | 'mobile' | 'desktop'
+  public readonly layoutPreference = Persistent.json<'auto' | 'mobile' | 'desktop'>(
+    "layoutPreference",
+    'auto'
+  );
 
   get currentTool(): IDrawFunction {
     return this.toolMode() === ToolMode.BOX

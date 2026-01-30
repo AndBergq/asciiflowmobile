@@ -1,0 +1,187 @@
+/* Floating Action Menu - Undo/Redo and Zoom controls */
+
+.container {
+  position: fixed;
+  right: 16px;
+  bottom: 100px;
+  z-index: 25;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 12px;
+}
+
+/* Safe area adjustment */
+@supports (margin-bottom: env(safe-area-inset-bottom)) {
+  .container {
+    bottom: calc(100px + env(safe-area-inset-bottom));
+  }
+}
+
+/* Quick undo/redo buttons */
+.quickActions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 6px;
+  background: var(--bg-elevated);
+  border-radius: 14px;
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border-color);
+}
+
+.actionButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: none;
+  background: transparent;
+  border-radius: 10px;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.actionButton:hover:not(.disabled) {
+  background: var(--bg-tertiary);
+}
+
+.actionButton:active:not(.disabled) {
+  transform: scale(0.92);
+  background: var(--accent-light);
+}
+
+.actionButton.disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.actionButton svg {
+  width: 22px;
+  height: 22px;
+}
+
+/* FAB container */
+.fabContainer {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.fab {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border: none;
+  background: var(--accent-color);
+  border-radius: 16px;
+  color: #ffffff;
+  cursor: pointer;
+  box-shadow: var(--shadow-md);
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.fab:hover {
+  background: var(--accent-hover);
+  transform: scale(1.05);
+}
+
+.fab:active {
+  transform: scale(0.95);
+}
+
+.fab.fabActive {
+  background: var(--error-color);
+  transform: rotate(180deg);
+}
+
+.fab svg {
+  width: 24px;
+  height: 24px;
+}
+
+/* Zoom indicator */
+.zoomIndicator {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 8px;
+  padding: 4px 10px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  box-shadow: var(--shadow-sm);
+  white-space: nowrap;
+}
+
+/* FAB Menu */
+.fabMenu {
+  position: absolute;
+  bottom: 100%;
+  right: 0;
+  margin-bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  animation: slideUp 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.fabMenuItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  box-shadow: var(--shadow-md);
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.fabMenuItem:hover {
+  background: var(--bg-secondary);
+  transform: translateX(-4px);
+}
+
+.fabMenuItem:active {
+  transform: scale(0.97) translateX(-4px);
+}
+
+.fabMenuItem svg {
+  width: 20px;
+  height: 20px;
+  color: var(--accent-color);
+}
+
+/* Animation keyframes */
+@keyframes slideUp {
+  from {
+    transform: translateY(10px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Dark mode specific adjustments */
+.dark .fab {
+  box-shadow: 0 4px 12px rgba(138, 180, 248, 0.2);
+}

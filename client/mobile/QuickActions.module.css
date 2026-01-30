@@ -1,0 +1,323 @@
+/* Quick Actions - Action sheet for export, share, etc. */
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  background: var(--overlay-bg);
+  z-index: 50;
+  animation: fadeIn 0.25s ease;
+}
+
+.sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  max-height: 70vh;
+  background: var(--bg-primary);
+  border-radius: 20px 20px 0 0;
+  z-index: 55;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow-xl);
+  animation: slideUp 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+  overflow: hidden;
+}
+
+/* Handle */
+.handle {
+  display: flex;
+  justify-content: center;
+  padding: 12px;
+}
+
+.handleBar {
+  width: 40px;
+  height: 4px;
+  background: var(--text-tertiary);
+  border-radius: 2px;
+  opacity: 0.5;
+}
+
+/* Header */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px 16px;
+}
+
+.title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.closeButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: none;
+  background: var(--bg-tertiary);
+  border-radius: 50%;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.closeButton:hover {
+  background: var(--bg-secondary);
+}
+
+.closeButton:active {
+  transform: scale(0.92);
+}
+
+/* Actions list */
+.actions {
+  display: flex;
+  flex-direction: column;
+  padding: 0 12px;
+  padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  gap: 4px;
+}
+
+.actionButton {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 14px 16px;
+  border: none;
+  background: transparent;
+  border-radius: 14px;
+  cursor: pointer;
+  gap: 14px;
+  transition: all 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+  text-align: left;
+}
+
+.actionButton:hover {
+  background: var(--bg-secondary);
+}
+
+.actionButton:active {
+  background: var(--bg-tertiary);
+  transform: scale(0.99);
+}
+
+.actionIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  background: var(--accent-light);
+  border-radius: 12px;
+  color: var(--accent-color);
+  flex-shrink: 0;
+}
+
+.actionIcon svg {
+  width: 22px;
+  height: 22px;
+}
+
+.actionContent {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.actionLabel {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.actionDescription {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+/* Rename dialog */
+.renameDialog {
+  display: flex;
+  align-items: center;
+  margin: 0 16px 16px;
+  padding: 8px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  gap: 8px;
+  animation: scaleIn 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.renameInput {
+  flex: 1;
+  padding: 10px 12px;
+  border: none;
+  background: var(--bg-primary);
+  border-radius: 8px;
+  font-size: 15px;
+  color: var(--text-primary);
+  outline: none;
+}
+
+.renameInput::placeholder {
+  color: var(--text-tertiary);
+}
+
+.renameConfirm {
+  padding: 10px 20px;
+  background: var(--accent-color);
+  border: none;
+  border-radius: 8px;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.renameConfirm:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.renameConfirm:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+
+/* Export options */
+.exportOptions {
+  display: flex;
+  flex-direction: column;
+  animation: slideIn 0.25s ease;
+}
+
+.exportHeader {
+  display: flex;
+  align-items: center;
+  padding: 0 16px 12px;
+  gap: 12px;
+}
+
+.backButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: none;
+  background: var(--bg-tertiary);
+  border-radius: 50%;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.backButton:hover {
+  background: var(--bg-secondary);
+}
+
+.backButton:active {
+  transform: scale(0.92);
+}
+
+.exportTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.exportList {
+  display: flex;
+  flex-direction: column;
+  padding: 0 12px;
+  padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  gap: 4px;
+}
+
+.exportOption {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 14px 16px;
+  border: none;
+  background: transparent;
+  border-radius: 12px;
+  font-size: 15px;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.exportOption:hover {
+  background: var(--bg-secondary);
+}
+
+.exportOption:active {
+  background: var(--bg-tertiary);
+}
+
+.exportLabel {
+  font-weight: 500;
+}
+
+.checkIcon {
+  width: 20px;
+  height: 20px;
+  color: var(--success-color);
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(-20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}

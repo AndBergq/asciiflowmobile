@@ -7,6 +7,7 @@ import {
   TouchController,
 } from "#asciiflow/client/controller";
 import { Drawer } from "#asciiflow/client/drawer";
+import { MobileLayout } from "#asciiflow/client/mobile";
 import { DrawingId, store, ToolMode } from "#asciiflow/client/store";
 import { screenToCell, View } from "#asciiflow/client/view";
 
@@ -25,7 +26,47 @@ export interface IRouteProps {
   share: string;
 }
 
+// Detect if device is mobile/touch-primary
+function useDeviceType(): 'mobile' | 'desktop' {
+  const [deviceType, setDeviceType] = React.useState<'mobile' | 'desktop'>(() => {
+    if (typeof window === 'undefined') return 'desktop';
+    const isTouchDevice =
+      'ontouchstart' in window ||
+      navigator.maxTouchPoints > 0 ||
+      window.innerWidth <= 768;
+    return isTouchDevice ? 'mobile' : 'desktop';
+  });
+
+  React.useEffect(() => {
+    const checkDevice = () => {
+      const isTouchDevice =
+        'ontouchstart' in window ||
+        navigator.maxTouchPoints > 0 ||
+        window.innerWidth <= 768;
+      setDeviceType(isTouchDevice ? 'mobile' : 'desktop');
+    };
+
+    window.addEventListener('resize', checkDevice);
+    return () => window.removeEventListener('resize', checkDevice);
+  }, []);
+
+  return deviceType;
+}
+
+// Determine layout based on preference and device type
+function useLayout(): 'mobile' | 'desktop' {
+  const deviceType = useDeviceType();
+  const preference = store.layoutPreference.get();
+
+  if (preference === 'auto') {
+    return deviceType;
+  }
+  return preference;
+}
+
 export const App = () => {
+  const layout = useLayout();
+
   return useWatchable(() => {
     const routeProps = useParams<IRouteProps>();
     store.setRoute(
@@ -43,16 +84,37 @@ export const App = () => {
         }),
       [store.darkMode.get()]
     );
+
+    const viewComponent = (
+      <View
+        {...desktopController.getHandlerProps()}
+        {...touchController.getHandlerProps()}
+      />
+    );
+
+    // Use mobile layout for touch devices or when preference is mobile
+    if (layout === 'mobile') {
+      return (
+        <ThemeProvider theme={theme}>
+          <div
+            className={[styles.app, store.darkMode.get() ? "dark" : ""].join(" ")}
+          >
+            <MobileLayout>
+              {viewComponent}
+            </MobileLayout>
+          </div>
+        </ThemeProvider>
+      );
+    }
+
+    // Use desktop layout for non-touch devices
     return (
       <ThemeProvider theme={theme}>
         <div
           className={[styles.app, store.darkMode.get() ? "dark" : ""].join(" ")}
         >
           <Drawer />
-          <View
-            {...desktopController.getHandlerProps()}
-            {...touchController.getHandlerProps()}
-          />
+          {viewComponent}
         </div>
       </ThemeProvider>
     );
